@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 34px;
+            font-weight: 600;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-card {
+            height: 100%;
+        }
+        
+        .metric-title {
+            font-size: 17px;
+            color: #86868b;
+            font-weight: 500;
+        }
+        
+        .metric-value {
+            font-size: 34px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #86868b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn.active {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .chart-container {
+            margin-top: 20px;
+            border-top: 1px solid #e5e5e5;
+            padding-top: 20px;
+        }
+
+        .today-container {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+        }
+        
+        .activity-summary, .heart-rate-detail {
+            flex: 1;
+        }
+        
+        .heart-rate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .heart-rate-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #FF2D55;
+        }
+        
+        .heart-rate-range {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .min-rate, .max-rate {
+            text-align: center;
+            font-size: 12px;
+            color: #86868b;
+        }
+        
+        .min-rate span, .max-rate span {
+            font-size: 24px;
+            font-weight: 600;
+            color: #FF2D55;
+        }
+        .chat-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+        
+        #chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #f5f5f7;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        #send-button {
+            padding: 12px 24px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        #send-button:hover {
+            background: #0066CC;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            white-space: pre-wrap;  /* 줄바꿈과 공백 유지 */
+            word-wrap: break-word;  /* 긴 텍스트 자동 줄바꿈 */
+        }
+        
+        .user-message {
+            background: #007AFF;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .assistant-message {
+            background: white;
+            color: #1d1d1f;
+            margin-right: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Health Dashboard</h1>
+    </div>
+    
+    <div class="dashboard">
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="metric-card">
+                <span class="metric-title">Today's Activity</span>
+                <div class="today-container">
+                    <!-- 왼쪽: 기존 활동 데이터 -->
+                    <div class="activity-summary">
+                        <div id="dailyDonutChart" style="width: 400px; height: 300px;"></div>
+                      </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="metric-card">
+                <span class="metric-title">Steps Comparison</span>
+                <div id="stepsComparisonChart"></div>
+                <div id="motivationMessage" class="motivation-message"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="metric-card">
+                <span class="metric-title">Heart Rate</span>
+                <div class="toggle-container">
+                    <button class="toggle-btn active" data-type="heart" data-period="weekly">Weekly</button>
+                    <button class="toggle-btn" data-type="heart" data-period="monthly">Monthly</button>
+                </div>
+                <div id="heartRateChart"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="metric-card">
+                <span class="metric-title">Steps</span>
+                <div class="toggle-container">
+                    <button class="toggle-btn active" data-type="steps" data-period="weekly">Weekly</button>
+                    <button class="toggle-btn" data-type="steps" data-period="monthly">Monthly</button>
+                </div>
+                <div id="stepsChart"></div>
+            </div>
+        </div>
+    
+        <div class="card">
+            <div class="metric-card">
+                <span class="metric-title">Heart Points</span>
+                <div class="toggle-container">
+                    <button class="toggle-btn active" data-type="heart-points" data-period="weekly">Weekly</button>
+                    <button class="toggle-btn" data-type="heart-points" data-period="monthly">Monthly</button>
+                </div>
+                <div id="heartPointsChart"></div>
+            </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="metric-card">
+                <span class="metric-title">Health Assistant</span>
+                <div class="chat-container">
+                    <div id="chat-messages"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="user-input" placeholder="Ask about your health data...">
+                        <button id="send-button">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let conversationHistory = []; // 대화 기록을 저장하는 배열
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (message) {
+                displayMessage(message, 'user');
+                
+                // 서버로 메시지와 히스토리 전송
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory // 현재까지의 대화 기록 전달
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayMessage(data.response, 'assistant');
+                    
+                    // 서버에서 업데이트된 히스토리 저장
+                    conversationHistory = data.history;
+                });
+                
+                input.value = '';
+            }
+        }
+        
+        function displayMessage(message, type) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${type}-message`);
+            
+            // 줄바꿈을 <br> 태그로 변환
+            messageElement.innerHTML = message.replace(/\n/g, '<br>');
+            
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        
+        const chartConfig = {
+            responsive: true,
+            displayModeBar: false,
+            layout: {
+                autosize: true,
+                margin: {
+                    l: 50,
+                    r: 30,
+                    t: 30,
+                    b: 50
+                }
+            },
+            font: {
+                family: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
+            }
+        };
+
+        function updateTodaySummary() {
+            fetch('/api/daily_stats')
+              .then(response => response.json())
+              .then(data => {
+                document.getElementById('today-steps').textContent = data.steps || 0;
+                document.getElementById('today-heart-points').textContent = data.heart_points || 0;
+              })
+              .catch(error => {
+                console.error('Error fetching daily stats:', error);
+                document.getElementById('today-steps').textContent = 'Error';
+                document.getElementById('today-heart-points').textContent = 'Error';
+              });
+          }
+
+
+        function createDailyDonutChart() {
+        fetch('/api/daily_stats')
+            .then(response => response.json())
+            .then(data => {
+            const trace = {
+                values: [data.steps, data.heart_points],
+                labels: ['Steps', 'Heart Points'],
+                type: 'pie',
+                hole: 0.6,
+                marker: {
+                colors: ['#2E4654', '#ED0C17']
+                },
+                textinfo: 'label+percent',
+                hoverinfo: 'label+value'
+            };
+        
+            const layout = {
+                showlegend: true,
+                annotations: [{
+                font: { size: 20 },
+                showarrow: false,
+                text: 'Today',
+                x: 0.5,
+                y: 0.5
+                }],
+                height: 300,
+                margin: { l: 20, r: 20, t: 20, b: 20 }
+            };
+        
+            Plotly.newPlot('dailyDonutChart', [trace], layout);
+            })
+            .catch(error => console.error('Error fetching daily stats:', error));
+        }
+        
+
+          
+        
+
+          
+    
+        function updateHourlyHeartRate() {
+            fetch('/api/hourly_heart_rate')
+              .then(response => response.json())
+              .then(data => {
+                const times = data.times;
+                const minRates = data.rates.map(r => r[2]); // Assuming r[2] is the min rate
+                const maxRates = data.rates.map(r => r[1]); // Assuming r[1] is the max rate
+          
+                const trace = {
+                  x: times,
+                  y: minRates,
+                  name: 'Min Rate',
+                  type: 'scatter',
+                  mode: 'lines',
+                  line: { color: '#FF2D55', width: 2 },
+                  fill: 'tonexty'
+                };
+          
+                const trace2 = {
+                  x: times,
+                  y: maxRates,
+                  name: 'Max Rate',
+                  type: 'scatter',
+                  mode: 'lines',
+                  line: { color: '#FF5733', width: 2 }
+                };
+          
+                Plotly.newPlot('hourlyHeartRateChart', [trace, trace2], {
+                  ...chartConfig,
+                  showlegend: true,
+                  yaxis: { title: 'BPM', range: [60, 140] },
+                  xaxis: { title: 'Time' },
+                  margin: { t: 10, r: 10, b: 40, l: 40 }
+                });
+          
+                if (data.rates && data.rates.length > 0) {
+                  document.getElementById('minRate').textContent = Math.min(...minRates);
+                  document.getElementById('maxRate').textContent = Math.max(...maxRates);
+                }
+              })
+              .catch(error => console.error('Error fetching hourly heart rate:', error));
+          }
+          
+
+          
+        
+        function updateHeartRate(period) {
+            fetch(`/api/heart_rate/${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    const maxTrace = {
+                        x: data.dates,
+                        y: data.rates.map(r => r[1]),  // max값
+                        name: 'Maximum',
+                        type: 'box',
+                        line: {color: '#C35D4E', width: 2},
+                        mode: 'lines+markers'
+                    };
+                    const minTrace = {
+                        x: data.dates,
+                        y: data.rates.map(r => r[2]),  // min값
+                        name: 'Minimum',
+                        type: 'box',
+                        line: {color: '#ED0C17', width: 2},
+                        mode: 'lines+markers'
+                    };
+                    
+                    Plotly.newPlot('heartRateChart', [maxTrace, minTrace], {
+                        ...chartConfig,
+                        yaxis: {title: 'BPM'},
+                        showlegend: true,
+                        legend: {orientation: 'h', y: -0.2},
+                        width: null,
+                        height: 350
+                    });
+                });
+        }
+
+        function updateSteps(period) {
+            fetch(`/api/steps/${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    const trace = {
+                        x: data.dates,
+                        y: data.steps,
+                        type: 'bar',
+                        marker: {
+                            color: '#007EC5',
+                            opacity: 0.8
+                        }
+                    };
+                    
+                    Plotly.newPlot('stepsChart', [trace], {
+                        ...chartConfig,
+                        yaxis: {title: 'Steps'},
+                        width: null,
+                        height: null
+                    });
+                });
+        }
+
+        function compareSteps() {
+            fetch('/api/steps/weekly')
+                .then(response => response.json())
+                .then(data => {
+                    const todaySteps = data.steps[data.steps.length - 1];
+                    const lastWeekSteps = data.steps[0];
+                    
+                    const trace = {
+                        y: ['Last Week', 'Today'],
+                        x: [lastWeekSteps, todaySteps],
+                        type: 'bar',
+                        orientation: 'h',
+                        marker: {
+                            color: ['#1CBA9E', '#007EC5']
+                        }
+                    };
+                    
+                    Plotly.newPlot('stepsComparisonChart', [trace], {
+                        ...chartConfig,
+                        xaxis: {title: 'Steps'},
+                        margin: { t: 30 }
+                    });
+                    
+                    const messageDiv = document.getElementById('motivationMessage');
+                    const difference = todaySteps - lastWeekSteps;
+                    let message = '';
+                    
+                    if (difference > 500) {
+                        message = "잘하고 있어요! 꾸준히 운동하는 당신이 자랑스럽습니다! 🎉";
+                        messageDiv.className = 'motivation-message positive';
+                    } else if (Math.abs(difference) <= 500) {
+                        message = "저번 주의 나보다 나은 자신이 되어보세요! 💪";
+                        messageDiv.className = 'motivation-message neutral';
+                    } else {
+                        message = "좀 더 힘을 내세요! 오늘은 어제보다 더 잘할 수 있어요! 🏃‍♂️";
+                        messageDiv.className = 'motivation-message negative';
+                    }
+                    
+                    messageDiv.textContent = message;
+                });
+        }
+
+        function updateHeartPoints(period) {
+            fetch(`/api/heart_points/${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    const trace = {
+                        x: data.dates,
+                        y: data.heart_points,
+                        type: 'bar',
+                        marker: {
+                            color: '#2E4654',
+                            opacity: 0.8
+                        },
+                        name: 'Heart Points'
+                    };
+                    
+                    Plotly.newPlot('heartPointsChart', [trace], {
+                        ...chartConfig,
+                        yaxis: {title: 'Points'},
+                        showlegend: false,
+                        width: null,
+                        height: 350
+                    });
+                });
+        }
+
+        // 토글 버튼 이벤트 처리
+        $('.toggle-btn').click(function() {
+            const type = $(this).data('type');
+            const period = $(this).data('period');
+            
+            // 같은 타입의 버튼들만 선택하여 active 클래스 제거/추가
+            $(`.toggle-btn[data-type="${type}"]`).removeClass('active');
+            $(this).addClass('active');
+            
+            // 각 차트 타입에 맞는 업데이트 함수 호출
+            if (type === 'heart') {
+                updateHeartRate(period);
+            } else if (type === 'steps') {
+                updateSteps(period);
+            } else if (type === 'heart-points') {
+                updateHeartPoints(period);
+            }
+        });
+
+        // 초기 차트 로드
+        createDailyDonutChart();
+        updateHeartRate('weekly');
+        updateSteps('weekly');
+        updateHeartPoints('weekly');
+        compareSteps();
+    </script>
+</body>
+</html>

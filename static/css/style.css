@@ -1,0 +1,24 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    text-align: center;
+}
+canvas {
+    max-width: 80%;
+    margin: 20px auto;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 15px;  /* 24px에서 15px로 줄임 */
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+}
+
+.metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;  /* 10px에서 5px로 줄임 */
+}
