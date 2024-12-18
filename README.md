@@ -36,7 +36,8 @@ python app.py
 <br>
 
 ## 프로젝트 사용 모델
-- [Llama3-korean-blossom-8n](https://huggingface.co/MLP-KTLim/llama-3-Korean-Bllossom-8B)
+- [Llama3-korean-blossom-8B](https://huggingface.co/MLP-KTLim/llama-3-Korean-Bllossom-8B)
 - [klue-sroberta-base-continue-learning-by-mnr](https://huggingface.co/bespin-global/klue-sroberta-base-continue-learning-by-mnr)
 <br>
+
 
